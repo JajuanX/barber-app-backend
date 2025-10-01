@@ -25,8 +25,14 @@ app.use(
     origin: (origin, callback) => {
       // allow same-origin / curl with no origin header
       if (!origin) return callback(null, true);
-      if (allowed.size === 0) return callback(null, true); // fallback: allow all if not configured
       if (allowed.has(origin)) return callback(null, true);
+      // Allow any Vercel deployment domain (prod + previews)
+      try {
+        const { hostname } = new URL(origin);
+        if (hostname.endsWith('.vercel.app')) return callback(null, true);
+      } catch {}
+      // Fallback: if no explicit FRONTEND_ORIGIN configured, be permissive
+      if (!FRONTEND_ORIGIN) return callback(null, true);
       return callback(new Error('Not allowed by CORS'));
     },
   })
