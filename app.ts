@@ -16,6 +16,10 @@ const app = express();
 // CORS: allow configured frontend origins; allow Vercel domains and localhost in dev
 const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN;
 const FRONTEND_ORIGINS = process.env.FRONTEND_ORIGINS;
+const FRONTEND_DOMAIN_SUFFIXES = (process.env.FRONTEND_DOMAIN_SUFFIXES || '')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
 const devOrigins = ['http://localhost:5173'];
 const allowed = new Set<string>();
 if (FRONTEND_ORIGINS) {
@@ -34,6 +38,13 @@ app.use(
       try {
         const { hostname } = new URL(origin);
         if (hostname.endsWith('.vercel.app')) return callback(null, true);
+        // Allow custom domains by suffix, e.g., sbp-barber.com (matches apex and subdomains)
+        if (
+          FRONTEND_DOMAIN_SUFFIXES.some(
+            (suffix) => hostname === suffix || hostname.endsWith(`.${suffix}`)
+          )
+        )
+          return callback(null, true);
       } catch {}
       // Fallback: if no explicit FRONTEND_ORIGIN configured, be permissive
       if (!FRONTEND_ORIGIN) return callback(null, true);
