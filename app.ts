@@ -13,10 +13,14 @@ import { errorHandler } from './middleware/errorHandler';
 const app = express();
 
 // Core middleware
-// CORS: allow Vercel origin in production; allow localhost in dev
+// CORS: allow configured frontend origins; allow Vercel domains and localhost in dev
 const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN;
+const FRONTEND_ORIGINS = process.env.FRONTEND_ORIGINS;
 const devOrigins = ['http://localhost:5173'];
 const allowed = new Set<string>();
+if (FRONTEND_ORIGINS) {
+  FRONTEND_ORIGINS.split(',').map((s) => s.trim()).filter(Boolean).forEach((o) => allowed.add(o));
+}
 if (FRONTEND_ORIGIN) allowed.add(FRONTEND_ORIGIN);
 if (process.env.NODE_ENV !== 'production') devOrigins.forEach((o) => allowed.add(o));
 
