@@ -1,0 +1,33 @@
+# Node / package managers
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build artifacts
+dist/
+*.tsbuildinfo
+
+# Environment
+.env
+.env.local
+
+# Logs / runtime
+logs/
+*.log
+*.pid
+*.pid.lock
+pids/
+
+# Testing / coverage
+coverage/
+.nyc_output/
+
+# Temp
+tmp/
+temp/
+
+# Misc
+.DS_Store
+.eslintcache
