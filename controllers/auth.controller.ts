@@ -1,13 +1,14 @@
 import { Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions, Secret } from 'jsonwebtoken';
 import User from '../models/User';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_change_me';
-const JWT_EXPIRES = process.env.JWT_EXPIRES || '7d';
+const JWT_SECRET: Secret = (process.env.JWT_SECRET || 'dev_secret_change_me') as Secret;
+const JWT_EXPIRES = (process.env.JWT_EXPIRES || '7d') as unknown as SignOptions['expiresIn'];
 
-function signToken(payload: any) {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES });
+function signToken(payload: Record<string, unknown>) {
+  const options: SignOptions = { expiresIn: JWT_EXPIRES };
+  return jwt.sign(payload, JWT_SECRET, options);
 }
 
 export async function register(req: Request, res: Response, next: NextFunction) {
