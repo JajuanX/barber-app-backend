@@ -17,7 +17,7 @@ declare global {
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_change_me';
 
-export function requireAuth(role?: 'admin' | 'student') {
+export function requireAuth(role?: 'admin' | 'student') {	
   return (req: Request, res: Response, next: NextFunction) => {
     const header = req.header('authorization') || req.header('Authorization');
     if (!header) return res.status(401).json({ message: 'Missing Authorization header' });
