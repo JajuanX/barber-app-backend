@@ -1,12 +1,14 @@
 import { Router } from 'express';
 import { requireAuth } from '../middleware/requireAuth';
-import { analyticsOverview, analyticsByCategory, studentStats, myOverview, myCategories, myStats } from '../controllers/analytics.controller';
+import { analyticsOverview, analyticsByCategory, studentStats, myOverview, myCategories, myStats, topStudents, lastAttempts } from '../controllers/analytics.controller';
 
 const router = Router();
 
 router.get('/overview', requireAuth('admin'), analyticsOverview);
 router.get('/categories', requireAuth('admin'), analyticsByCategory);
 router.get('/student-stats', requireAuth('admin'), studentStats);
+router.get('/top-students', requireAuth('admin'), topStudents);
+router.get('/last-attempts', requireAuth('admin'), lastAttempts);
 
 // Student self-serve analytics
 router.get('/me/overview', requireAuth(), myOverview);

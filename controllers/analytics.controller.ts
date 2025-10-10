@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import QuizAttempt from '../models/QuizAttempt';
 import Question from '../models/Question';
 import mongoose from 'mongoose';
+import User from '../models/User';
 
 // GET /api/analytics/overview
 export async function analyticsOverview(req: Request, res: Response, next: NextFunction) {
@@ -236,6 +237,112 @@ export async function myStats(req: Request, res: Response, next: NextFunction) {
           }
         : undefined;
     return res.status(200).json({ message: 'OK', data: { last: toDto(last), best: toDto(best) } });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+// GET /api/analytics/top-students
+export async function topStudents(_req: Request, res: Response, next: NextFunction) {
+  try {
+    const rows = await QuizAttempt.aggregate([
+      { $match: { submitted: true } },
+      {
+        $project: {
+          userId: 1,
+          score: 1,
+          percent: { $multiply: [{ $divide: ['$score', { $size: '$questionIds' }] }, 100] },
+        },
+      },
+      {
+        $group: {
+          _id: '$userId',
+          avgPercent: { $avg: '$percent' },
+          attempts: { $sum: 1 },
+        },
+      },
+      { $sort: { avgPercent: -1, attempts: -1 } },
+      { $limit: 5 },
+      {
+        $lookup: {
+          from: User.collection.name,
+          localField: '_id',
+          foreignField: '_id',
+          as: 'user',
+        },
+      },
+      { $unwind: '$user' },
+      {
+        $project: {
+          _id: 0,
+          userId: '$_id',
+          name: '$user.name',
+          email: '$user.email',
+          avgPercent: { $round: ['$avgPercent', 2] },
+          attempts: 1,
+        },
+      },
+    ]);
+    return res.status(200).json({ message: 'OK', data: rows });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+// GET /api/analytics/last-attempts?userId=...
+export async function lastAttempts(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userId = req.query.userId as string | undefined;
+    const match: any = { submitted: true };
+    const includeUser = !userId || !mongoose.isValidObjectId(userId);
+    if (userId && mongoose.isValidObjectId(userId)) {
+      match.userId = new mongoose.Types.ObjectId(userId);
+    }
+
+    const pipeline: any[] = [
+      { $match: match },
+      { $sort: { createdAt: -1 } },
+      { $limit: 5 },
+      {
+        $project: {
+          userId: 1,
+          score: 1,
+          total: { $size: '$questionIds' },
+          percent: { $multiply: [{ $divide: ['$score', { $size: '$questionIds' }] }, 100] },
+          createdAt: 1,
+        },
+      },
+    ];
+
+    if (includeUser) {
+      pipeline.push(
+        {
+          $lookup: {
+            from: User.collection.name,
+            localField: 'userId',
+            foreignField: '_id',
+            as: 'user',
+          },
+        },
+        { $unwind: '$user' },
+        {
+          $project: {
+            userId: 1,
+            name: '$user.name',
+            email: '$user.email',
+            score: 1,
+            total: 1,
+            percent: { $round: ['$percent', 2] },
+            createdAt: 1,
+          },
+        }
+      );
+    } else {
+      pipeline.push({ $project: { email: 0 } });
+    }
+
+    const rows = await QuizAttempt.aggregate(pipeline);
+    return res.status(200).json({ message: 'OK', data: rows });
   } catch (err) {
     return next(err);
   }
